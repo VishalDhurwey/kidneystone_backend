@@ -8,6 +8,7 @@ from flask_cors import CORS
 from ultralytics import YOLO
 from werkzeug.utils import secure_filename
 import gc
+import google.generativeai as genai
 
 # Constants
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -144,6 +145,37 @@ def predict_image(image_path=None, image=None, conf=0.3, dpi=300):
     except Exception as e:
         print(f"❌ Error in predict_image: {str(e)}")
         raise
+
+# Set your Gemini API Key
+genai.configure(api_key="AIzaSyAx9pUTUhIRVWQjIMOsR6_oxl8vBkXLXOg")
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.get_json()
+    user_message = data.get('message')
+
+    # Construct a better prompt for shorter, polite responses
+    prompt = f"""
+You are a polite kidney health assistant.
+Answer the user's question briefly in 1 short and clear sentence.
+Keep the tone friendly and supportive.
+
+User: {user_message}
+Assistant:
+"""
+
+
+    # Call Gemini API (assuming you're using Google Generative AI API)
+    import google.generativeai as genai
+
+    genai.configure(api_key="AIzaSyAx9pUTUhIRVWQjIMOsR6_oxl8vBkXLXOg")
+    model = genai.GenerativeModel('gemini-pro')
+
+    response = model.generate_content(prompt)
+    answer = response.text.strip()
+
+    return jsonify({"response": answer})
+
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
