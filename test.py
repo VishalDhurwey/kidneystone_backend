@@ -97,49 +97,55 @@ def predict_image(image_path, dpi=300, conf=0.3):
 
 genai.configure(api_key="YOUR_GEMINI_API_KEY")
 
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    data = request.get_json()
-    user_message = data.get('message')
-    prompt = f"User: {user_message}\nAssistant:" 
-
-    model = genai.GenerativeModel('gemini-pro')
-    response = model.generate_content(prompt)
-    answer = response.text.strip()
-
-    return jsonify({"response": answer})
+@app.route('/')
+def home():
+    return "Kidney Stone Detection API is Running!"
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image file uploaded'}), 400
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file uploaded'}), 400
 
-    image_file = request.files['image']
-    if image_file.filename == '' or not allowed_file(image_file.filename):
-        return jsonify({'error': 'Invalid file type'}), 400
+        image_file = request.files['image']
 
-    image_filename = f"{uuid.uuid4().hex}_{secure_filename(image_file.filename)}"
-    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
-    image_file.save(image_path)
+        if image_file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
 
-    pred_img, detections = predict_image(image_path, dpi=DPI)
-    pred_img_path = os.path.join(RESULT_FOLDER, f"pred_{image_filename}")
-    cv2.imwrite(pred_img_path, cv2.cvtColor(pred_img, cv2.COLOR_RGB2BGR))
+        if not allowed_file(image_file.filename):
+            return jsonify({'error': f'Invalid file type. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
 
-    cleanup_old_files(UPLOAD_FOLDER)
-    cleanup_old_files(RESULT_FOLDER)
+        # Secure the filename and save
+        image_filename = f"{uuid.uuid4().hex}_{secure_filename(image_file.filename)}"
+        image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+        image_file.save(image_path)
 
-    download_url = url_for('download_file', filename=f"pred_{image_filename}", _external=True)
+        # Run detection
+        pred_img, detections = predict_image(image_path, dpi=DPI)
 
-    return jsonify({
-        'status': 'success',
-        'predicted_image_url': download_url,
-        'detections': detections
-    })
+        # Save processed image
+        pred_img_path = os.path.join(RESULT_FOLDER, f"pred_{image_filename}")
+        cv2.imwrite(pred_img_path, cv2.cvtColor(pred_img, cv2.COLOR_RGB2BGR))
 
-@app.route('/download/<filename>', methods=['GET'])
-def download_file(filename):
-    return send_file(os.path.join(RESULT_FOLDER, filename), as_attachment=True)
+        # Cleanup old files
+        cleanup_old_files(UPLOAD_FOLDER)
+        cleanup_old_files(RESULT_FOLDER)
+
+        # Dynamically create the image URL (works on Render)
+        predicted_image_url = f'{request.host_url}download/{os.path.basename(pred_img_path)}'
+
+        return jsonify({
+            'status': 'success',
+            'predicted_image_url': predicted_image_url,
+            'detections': detections,
+            'message': f'Successfully processed image with {len(detections)} detections'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
