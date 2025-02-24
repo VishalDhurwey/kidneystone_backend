@@ -6,4 +6,4 @@ flask-cors
 ultralytics
 Werkzeug
 google-generativeai
-
+pymongo
