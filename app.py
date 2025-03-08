@@ -247,4 +247,5 @@ def download_file(filename):
         return jsonify({'error': f'File not found: {str(e)}'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    port = int(os.getenv("PORT", 5000))  # Use PORT from Render, default to 5000
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
