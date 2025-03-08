@@ -248,4 +248,4 @@ def download_file(filename):
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))  # Use PORT from Render, default to 5000
-    app.run(port=port, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
