@@ -31,7 +31,9 @@ except Exception as e:
 # Flask Setup
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+#CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://kidneystonedetection.netlify.app"]}})
+
 
 UPLOAD_FOLDER = 'uploads'
 RESULT_FOLDER = 'results'
