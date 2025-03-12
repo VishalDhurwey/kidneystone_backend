@@ -1,9 +1,10 @@
 Flask
-opencv-python
+opencv-python-headless==4.9.0.80
 torch
 numpy
 flask-cors
 ultralytics
 Werkzeug
 google-generativeai
+gunicorn
 
